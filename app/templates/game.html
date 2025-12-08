@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Destroyer Clicker</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* WARNING OVERLAY */
+        #danger-zone {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 0, 0, 0.5);
+            z-index: 10;
+            pointer-events: none;
+            animation: flash 0.2s infinite;
+        }
+        @keyframes flash {
+            0% { opacity: 0.2; }
+            50% { opacity: 0.6; }
+            100% { opacity: 0.2; }
+        }
+
+        #warning-text {
+            display: none;
+            position: absolute;
+            top: 20%;
+            font-size: 3rem;
+            color: red;
+            background: black;
+            padding: 20px;
+            border: 5px solid red;
+            z-index: 20;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        h1 { margin-bottom: 10px; }
+        .score { font-size: 4rem; color: #00ff00; margin-bottom: 30px; }
+
+        /* THE BIG BUTTON */
+        button {
+            background-color: #ff4757;
+            color: white;
+            border: none;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 10px #8b0000;
+            transition: all 0.1s;
+            outline: none;
+            font-weight: bold;
+            z-index: 5;
+        }
+        button:active {
+            transform: scale(0.95) translateY(5px);
+            box-shadow: 0 5px #8b0000;
+        }
+
+        /* STATUS BARS */
+        .stats-container {
+            margin-top: 50px;
+            width: 80%;
+            max-width: 400px;
+        }
+        .stat-box { margin-bottom: 15px; }
+        .label { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .progress-bg { width: 100%; background: #333; height: 20px; border-radius: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; width: 0%; transition: width 0.3s; }
+        
+        #cpu-fill { background-color: #3498db; }
+        #mem-fill { background-color: #9b59b6; }
+
+    </style>
+</head>
+<body>
+
+    <div id="danger-zone"></div>
+    <div id="warning-text">⚠️ CRITICAL OVERLOAD! ⚠️<br>SLOW DOWN!</div>
+
+    <h1>TOTAL USERS</h1>
+    <div class="score" id="score">0</div>
+
+    <button onclick="hitServer()">CLICK FOR<br>TRAFFIC</button>
+
+    <div class="stats-container">
+        <div class="stat-box">
+            <div class="label"><span>CPU LOAD</span> <span id="cpu-val">0%</span></div>
+            <div class="progress-bg"><div class="progress-fill" id="cpu-fill"></div></div>
+        </div>
+        <div class="stat-box">
+            <div class="label"><span>MEMORY USAGE</span> <span id="mem-val">0%</span></div>
+            <div class="progress-bg"><div class="progress-fill" id="mem-fill"></div></div>
+        </div>
+    </div>
+
+    <script>
+        async function hitServer() {
+            try {
+                const response = await fetch('/click');
+                const data = await response.json();
+
+                // Update Score
+                document.getElementById('score').innerText = data.score;
+
+                // Update Stats
+                updateStat('cpu', data.cpu);
+                updateStat('mem', data.memory);
+
+                // Check Danger Levels
+                checkDanger(data.cpu, data.memory);
+
+            } catch (error) {
+                console.error("Server might be dead...", error);
+            }
+        }
+
+        function updateStat(type, value) {
+            document.getElementById(`${type}-val`).innerText = value + '%';
+            document.getElementById(`${type}-fill`).style.width = value + '%';
+            
+            // Change color if high
+            const bar = document.getElementById(`${type}-fill`);
+            if (value > 90) bar.style.backgroundColor = 'red';
+            else if (type === 'cpu') bar.style.backgroundColor = '#3498db';
+            else bar.style.backgroundColor = '#9b59b6';
+        }
+
+        function checkDanger(cpu, mem) {
+            const overlay = document.getElementById('danger-zone');
+            const text = document.getElementById('warning-text');
+
+            if (cpu > 90 || mem > 90) {
+                overlay.style.display = 'block';
+                text.style.display = 'block';
+            } else {
+                overlay.style.display = 'none';
+                text.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
