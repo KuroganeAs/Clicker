@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Server Destroyer Clicker</title>
+    <title>Server Destroyer</title>
     <style>
         body {
             background-color: #121212;
@@ -18,141 +18,112 @@
             overflow: hidden;
         }
 
-        /* WARNING OVERLAY */
         #danger-zone {
             display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255, 0, 0, 0.5);
-            z-index: 10;
-            pointer-events: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 0, 0, 0.5); z-index: 10; pointer-events: none;
             animation: flash 0.2s infinite;
         }
-        @keyframes flash {
-            0% { opacity: 0.2; }
-            50% { opacity: 0.6; }
-            100% { opacity: 0.2; }
-        }
+        @keyframes flash { 0% { opacity: 0.2; } 50% { opacity: 0.6; } 100% { opacity: 0.2; } }
 
-        #warning-text {
-            display: none;
-            position: absolute;
-            top: 20%;
-            font-size: 3rem;
-            color: red;
-            background: black;
-            padding: 20px;
-            border: 5px solid red;
-            z-index: 20;
-            text-transform: uppercase;
-            font-weight: bold;
-        }
+        h1 { margin-bottom: 5px; color: #888; font-size: 1rem; }
+        .score { font-size: 4rem; color: #00ff00; margin-bottom: 20px; text-shadow: 0 0 10px #00ff00; }
 
-        h1 { margin-bottom: 10px; }
-        .score { font-size: 4rem; color: #00ff00; margin-bottom: 30px; }
-
-        /* THE BIG BUTTON */
         button {
-            background-color: #ff4757;
-            color: white;
-            border: none;
-            width: 200px;
-            height: 200px;
-            border-radius: 50%;
-            font-size: 1.5rem;
-            cursor: pointer;
-            box-shadow: 0 10px #8b0000;
-            transition: all 0.1s;
-            outline: none;
-            font-weight: bold;
-            z-index: 5;
+            background-color: #ff4757; color: white; border: none;
+            width: 180px; height: 180px; border-radius: 50%;
+            font-size: 1.5rem; cursor: pointer; box-shadow: 0 10px #8b0000;
+            transition: all 0.1s; outline: none; font-weight: bold; z-index: 5;
         }
-        button:active {
-            transform: scale(0.95) translateY(5px);
-            box-shadow: 0 5px #8b0000;
-        }
+        button:active { transform: scale(0.95) translateY(5px); box-shadow: 0 5px #8b0000; }
 
-        /* STATUS BARS */
-        .stats-container {
-            margin-top: 50px;
-            width: 80%;
-            max-width: 400px;
+        /* DASHBOARD INFO BARU */
+        .dashboard {
+            display: flex; gap: 20px; margin-top: 30px; width: 90%; max-width: 500px;
         }
-        .stat-box { margin-bottom: 15px; }
-        .label { display: flex; justify-content: space-between; margin-bottom: 5px; }
-        .progress-bg { width: 100%; background: #333; height: 20px; border-radius: 10px; overflow: hidden; }
+        .card {
+            background: #1e1e1e; padding: 15px; border-radius: 8px; width: 100%;
+            border: 1px solid #333;
+        }
+        .card-title { font-size: 0.8rem; color: #aaa; margin-bottom: 5px; }
+        .card-value { font-size: 1.2rem; font-weight: bold; }
+        
+        .progress-bg { width: 100%; background: #333; height: 10px; border-radius: 5px; margin-top: 5px; overflow: hidden; }
         .progress-fill { height: 100%; width: 0%; transition: width 0.3s; }
         
-        #cpu-fill { background-color: #3498db; }
-        #mem-fill { background-color: #9b59b6; }
+        #lat-val { color: #f1c40f; } /* Kuning untuk Latency */
 
     </style>
 </head>
 <body>
 
     <div id="danger-zone"></div>
-    <div id="warning-text">⚠️ CRITICAL OVERLOAD! ⚠️<br>SLOW DOWN!</div>
 
-    <h1>TOTAL USERS</h1>
+    <h1>TOTAL REQUESTS (TRAFFIC)</h1>
     <div class="score" id="score">0</div>
 
-    <button onclick="hitServer()">CLICK FOR<br>TRAFFIC</button>
+    <button onclick="hitServer()">SEND<br>REQUEST</button>
 
-    <div class="stats-container">
-        <div class="stat-box">
-            <div class="label"><span>CPU LOAD</span> <span id="cpu-val">0%</span></div>
-            <div class="progress-bg"><div class="progress-fill" id="cpu-fill"></div></div>
+    <div class="dashboard">
+        <div class="card">
+            <div class="card-title">SERVER HEALTH</div>
+            
+            <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
+                <span>CPU Load</span> <span id="cpu-text">0%</span>
+            </div>
+            <div class="progress-bg"><div class="progress-fill" id="cpu-bar" style="background:#3498db"></div></div>
+            
+            <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-top:10px;">
+                <span>Memory</span> <span id="mem-text">0%</span>
+            </div>
+            <div class="progress-bg"><div class="progress-fill" id="mem-bar" style="background:#9b59b6"></div></div>
         </div>
-        <div class="stat-box">
-            <div class="label"><span>MEMORY USAGE</span> <span id="mem-val">0%</span></div>
-            <div class="progress-bg"><div class="progress-fill" id="mem-fill"></div></div>
+
+        <div class="card">
+            <div class="card-title">NETWORK STATS</div>
+            <div>Latency: <span id="lat-val" class="card-value">0.000s</span></div>
+            <div style="font-size: 0.7rem; color: #555; margin-top: 5px;">Response Time from Server</div>
         </div>
     </div>
 
     <script>
         async function hitServer() {
             try {
+                const startClient = Date.now();
                 const response = await fetch('/click');
                 const data = await response.json();
-
-                // Update Score
+                
+                // Update Data
                 document.getElementById('score').innerText = data.score;
+                
+                // Update Latency (Server side calculation)
+                document.getElementById('lat-val').innerText = data.latency + 's';
 
-                // Update Stats
-                updateStat('cpu', data.cpu);
-                updateStat('mem', data.memory);
+                // Update Progress Bars
+                updateBar('cpu', data.cpu);
+                updateBar('mem', data.memory);
 
-                // Check Danger Levels
-                checkDanger(data.cpu, data.memory);
+                // Warning Overlay Logic
+                const overlay = document.getElementById('danger-zone');
+                if (data.cpu > 90 || data.memory > 90) {
+                    overlay.style.display = 'block';
+                } else {
+                    overlay.style.display = 'none';
+                }
 
             } catch (error) {
-                console.error("Server might be dead...", error);
+                console.error("Server Down");
             }
         }
 
-        function updateStat(type, value) {
-            document.getElementById(`${type}-val`).innerText = value + '%';
-            document.getElementById(`${type}-fill`).style.width = value + '%';
-            
-            // Change color if high
-            const bar = document.getElementById(`${type}-fill`);
-            if (value > 90) bar.style.backgroundColor = 'red';
-            else if (type === 'cpu') bar.style.backgroundColor = '#3498db';
-            else bar.style.backgroundColor = '#9b59b6';
-        }
-
-        function checkDanger(cpu, mem) {
-            const overlay = document.getElementById('danger-zone');
-            const text = document.getElementById('warning-text');
-
-            if (cpu > 90 || mem > 90) {
-                overlay.style.display = 'block';
-                text.style.display = 'block';
-            } else {
-                overlay.style.display = 'none';
-                text.style.display = 'none';
-            }
+        function updateBar(type, val) {
+            document.getElementById(type + '-text').innerText = val + '%';
+            const bar = document.getElementById(type + '-bar');
+            bar.style.width = val + '%';
+            if(val > 90) bar.style.background = 'red';
+            else bar.style.background = type === 'cpu' ? '#3498db' : '#9b59b6';
         }
     </script>
 </body>
 </html>
+
